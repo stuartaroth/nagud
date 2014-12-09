@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# nagud This starts and stops nagud
+#
+# chkconfig: 2345 12 88
+# description: nagud is used to receive and parse udp packets to update passive Nagios checks
+# processname: nagud
+# pidfile: /var/run/nagud.pid
+### BEGIN INIT INFO
+# Provides: $nagud
+### END INIT INFO
+
+# Author: stuartaroth@gmail.com
+
+# Source function library.
+. /etc/init.d/functions
+
+binary="/usr/sbin/nagud"
+
+[ -x $binary ] || exit 0
+
+RETVAL=0
+
+start() {
+    echo -n "Starting nagud: "
+    daemon $binary
+    RETVAL=$?
+    PID=$!
+    echo
+    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/nagud
+
+    echo $PID > /var/run/nagud.pid
+}
+
+stop() {
+    echo -n "Shutting down nagud: "
+    killproc nagud
+    RETVAL=$?
+    echo
+    if [ $RETVAL -eq 0 ]; then
+        rm -f /var/lock/subsys/nagud
+        rm -f /var/run/nagud.pid
+    fi
+}
+
+restart() {
+    echo -n "Restarting nagud: "
+    stop
+    sleep 2
+    start
+}
+
+case "$1" in
+    start)
+        start
+    ;;
+    stop)
+        stop
+    ;;
+    status)
+        status nagud
+    ;;
+    restart)
+        restart
+    ;;
+    *)
+        echo "Usage: $0 {start|stop|status|restart}"
+    ;;
+esac
+
+exit 0

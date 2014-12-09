@@ -1,0 +1,63 @@
+#!/usr/bin/perl -w
+
+# Author: stuartaroth@gmail.com
+
+use strict;
+use IO::Socket;
+
+sub daemonize {
+    use POSIX;
+    POSIX::setsid or die "setsid: $!";
+    my $pid = fork ();
+    if ($pid < 0) {
+        die "fork: $!";
+    } elsif ($pid) {
+        exit 0;
+    }
+    chdir "/";
+    umask 0;
+    foreach (0 .. (POSIX::sysconf (&POSIX::_SC_OPEN_MAX) || 1024))
+        { POSIX::close $_ }
+    open (STDIN, "</dev/null");
+    open (STDOUT, ">/dev/null");
+    open (STDERR, ">&STDOUT");
+}
+
+&daemonize;
+
+my($sock, $newmsg, $hishost, $MAXLEN, $PORTNO);
+
+
+$MAXLEN = 1024;
+
+#change this port number as needed
+$PORTNO = 5151;
+
+
+$sock = IO::Socket::INET->new(
+           LocalPort => $PORTNO, 
+       Proto => 'udp') or die "socket: $@";
+
+while ($sock->recv($newmsg, $MAXLEN)) {
+    my($port, $ipaddr) = sockaddr_in($sock->peername);
+    $hishost = gethostbyaddr($ipaddr, AF_INET);
+    if($hishost) {
+    }
+    else {
+    }
+		my $cmdline = "";
+		eval {
+			my $echocmd="/bin/echo";
+			
+            #this variable should be the path to the nagios.cmd file
+            my $CommandFile="/var/lib/nagios3/rw/nagios.cmd";
+			
+            my $datetime = `date +%s`;
+			chomp($datetime);
+			$cmdline = "\"[$datetime] PROCESS_SERVICE_CHECK_RESULT;" . $newmsg . "\"";
+			my $exec = `$echocmd $cmdline >> $CommandFile`;
+		};
+		$sock->send("CONFIRMED: $cmdline ");
+} 
+die "recv: $!";
+

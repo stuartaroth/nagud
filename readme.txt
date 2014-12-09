@@ -15,4 +15,7 @@ Nagios services can then be updated by sending a UDP packet with the contents:
 
 Host Name;Service Name;Alarm Severity;Alarm Message
 
-The script nagud_update.pl formats the UDP message to send correctly.
+This can be done from the command line by using the following command:
+  echo "host name;service name;alarm severity;alarm message" > /dev/udp/nagios server/nagud listening port
+
+The scripts nagud_update.sh and nagud_update.pl can both send these packets.
